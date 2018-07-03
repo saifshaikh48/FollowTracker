@@ -1,5 +1,6 @@
 import java.awt.MouseInfo;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,6 @@ public class Main {
   public static void main(String[] args) throws InterruptedException {
     User me = new PersonZero(args[0] + args[1], args[2], args[3]);
 
-    //mousePos();
     long startTime = System.nanoTime();
 
     System.setProperty("webdriver.chrome.driver", "/Users/saif/Downloads/chromedriver");
@@ -27,18 +27,16 @@ public class Main {
     WebDriver driver = new ChromeDriver();
     Actions actions = new Actions(driver);
 
-    driver.manage().window().maximize();
+    //driver.manage().window().maximize();
     driver.get("https://www.instagram.com");
 
-    //System.out.println(driver.getTitle() + "\n");
-
-    pause(.5);
+    pause(1);
 
     WebElement ele = driver.findElement(By.xpath("//*[@id=\"react-root\"]/section/main/article" +
             "/div[2]/div[2]/p/a"));
     actions.moveToElement(ele).click(ele).build().perform();
 
-    pause(.5);
+    pause(1);
 
     ArrayList<WebElement> fields = (ArrayList<WebElement>) driver.findElements(By.tagName("input"));
     fields.get(0).sendKeys(args[2]);
@@ -52,64 +50,96 @@ public class Main {
 
     driver.findElement(By.tagName("button")).click();
 
-    pause(.5);
+    pause(1);
 
     driver.findElement(By.linkText("Profile")).click();
 
-    pause(.5);
+    pause(2);
 
-    driver.findElement(By.xpath("//*[@id=\"react-root\"]/section/main/div/header/section/ul/li[3" +
-            "]/a" )).click();
-
-    pause(.5);
-
-    String followText = driver.findElement(By.partialLinkText(" following")).getText();
-    int numFollowers = Integer.parseInt(followText.substring(0, followText.indexOf(" ")));
+    List<WebElement> followLinks = driver.findElements(By.partialLinkText("follow"));
+    int numFollowers = Integer.parseInt(followLinks.get(0).getText().substring(0,
+            followLinks.get(0).getText().indexOf(" ")));
+    int numFollowing = Integer.parseInt(followLinks.get(1).getText().substring(0,
+            followLinks.get(1).getText().indexOf(" ")));
     System.out.println(numFollowers);
+    System.out.println(numFollowing);
 
-    Map<User, List<User>> followeeToFollowers = new HashMap<>();
-    List<User> followers = new ArrayList<>();
-    for (int i = 1; i <= numFollowers; i++) {
+    pause(1);
+numFollowers = 4;
+numFollowing = 3;
+    scrapeFollowList(driver, me, 2, numFollowers);
+    //System.out.println(me.getFollowers());
+    //System.out.println(me.getFollowers().size());
+
+    driver.navigate().back();
+
+    scrapeFollowList(driver, me, 3, numFollowing);
+    //System.out.println(me.getFollowing());
+    //System.out.println(me.getFollowing().size());
+
+    pause(1);
+
+    for (int i = 1, k = 3; i <= numFollowing; i++) { //iterate through the people I follow
+      driver.findElement(By.xpath("/html/body/div[" + k + "]/div/div[2]/div/div[2]/ul/div/li[" + i +
+              "]/div/div[1]/div/div[1]/a")).click();
+
+      pause(1);
+
+      scrapeFollowList(driver, me.getFollowing().get(i - 1), 2, numFollowers);
+      //numFollowers should be that of person being followed
+
+      driver.navigate().back();
+
+      scrapeFollowList(driver, me.getFollowing().get(i - 1), 3, numFollowing);
+      //numFollowing should be that of person being followed
+
+      driver.navigate().back();
+      driver.navigate().back();
+
+      if (i == 1) {
+        k--;
+      }
+    }
+    driver.quit();
+    System.out.printf("\nRun time: %.3f sec", (System.nanoTime() - startTime) / Math.pow(10, 9));
+  }
+
+  public static void scrapeFollowList(WebDriver driver, User u, int elementNum, int numFollow)
+          throws InterruptedException {
+    driver.findElement(By.xpath("//*[@id=\"react-root\"]/section/main/div/header/section/ul/li[" +
+            elementNum + "]/a" )).click();
+
+    pause(1);
+
+    for (int i = 1; i <= numFollow; i++) {
       try {
-        String[] nameInfo = driver.findElement(By.xpath
-                ("/html/body/div[3]/div/div[2]/div/div[2]/ul/div/li["
-                + i + "]")).getText().split("\n");
+        List<String> nameInfo = new ArrayList<>(Arrays.asList(driver.findElement(By.xpath("/html" +
+                "/body/div[3]/div/div[2]/div/div[2]/ul/div/li[" + i + "]")).getText().split("\n")));
 
-        if (nameInfo.length == 2) { //if user has no name, assign it as empty string
-          nameInfo[1] = "";
+        if (nameInfo.size() == 2) { //if user has no name, assign it as empty string
+          nameInfo.add(1, "");
         }
-        me.addFollowing(new User(nameInfo[1], nameInfo[0]));
+        //System.out.println("\n-----------------\nnameinfo: "+nameInfo+"\n--------------\n");
 
-        System.out.println(i + ": " + me.following);
+        if (elementNum == 2) {
+          u.addFollower(new User(nameInfo.get(1), nameInfo.get(0)));
+        }
+        else if (elementNum == 3) {
+          u.addFollowing(new User(nameInfo.get(1), nameInfo.get(0)));
+        }
       }
       catch (NoSuchElementException e) {
-        System.out.println("fail " + i);
         i--;
 
-        //driver.findElement(By.xpath("/html/body/div[3]/div/div[2]/div")).click();
         JavascriptExecutor jse = (JavascriptExecutor)driver;
         jse.executeScript("y = document.body.getElementsByClassName(\"j6cq2\");" +
                 "var x = y[0];x.scrollTo(0,x.scrollHeight);");
       }
-      pause(.15);
+
+      pause(.25);
     }
-    // <div class="PdwC2 HYpXt" role="dialog">
-    // /html/body/div[3]/div/div[2]/div
-
-    //((JavascriptExecutor)driver).executeScript("scroll(0,400)");
-//https://sqa.stackexchange.com/questions/18796/unable-to-scroll-down-to-bottom-of-div-with-data-loading-dynamically
-
-    pause(0.5);
-
-
-    // /html/body/div[2]/div/div[2]/div/div[2]/ul/div/li[1]
-    // /html/body/div[3]/div/div[2]/div/div[2]/ul/div/li[1]/div/div[1]/div/div[1]/a
-    // /html/body/div[3]/div/div[2]/div/div[2]/ul/div/li[583]/div/div[1]/div/div[1]/a
-
-    //driver.quit();
-    System.out.printf("\nRun time: %.3f sec", (System.nanoTime() - startTime) / Math.pow(10, 9));
+    //System.out.println("ers: " + u.getFollowers() + "\n  |  ing :" + u.getFollowing());
   }
-
 
   public static void pause(double sec) throws InterruptedException {
     TimeUnit.MILLISECONDS.sleep((int) sec * 1000);
@@ -154,7 +184,8 @@ public class Main {
  mousePos();
  long startTime = System.nanoTime();
 
- System.setProperty("webdriver.chrome.driver", "C:\\Users\\\\Downloads\\chromedriver_win32\\chromedriver.exe");
+ System.setProperty("webdriver.chrome.driver",
+ "C:\\Users\\\\Downloads\\chromedriver_win32\\chromedriver.exe");
  WebDriver driver = new ChromeDriver();
 
  driver.manage().window().maximize();
@@ -170,7 +201,8 @@ public class Main {
 
  ArrayList <WebElement> links = (ArrayList<WebElement>) driver.findElements(By.tagName("a"));
  for(WebElement el: links)
- System.out.print(el.getTagName() + " " + el.getText() + " " + el.getSize() + " " + el.getLocation() + " " + el.isDisplayed() + " " + el.isEnabled() + "\n");
+ System.out.print(el.getTagName() + " " + el.getText() + " " + el.getSize() + " " + el.getLocation()
+ + " " + el.isDisplayed() + " " + el.isEnabled() + "\n");
  links.get(0).click();
  pause(3);
 
