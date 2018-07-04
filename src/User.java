@@ -27,11 +27,17 @@ public class User {
     this.following = new ArrayList<>();
   }
 
-  public void addFollowing(User u) {
+  public void addFollowing(User u) throws IllegalArgumentException {
+    if (this.following.contains(u)) {
+      throw new IllegalArgumentException(this + " is already following " + u);
+    }
     this.following.add(u);
   }
 
-  public void addFollower(User u) {
+  public void addFollower(User u) throws IllegalArgumentException {
+    if (this.followers.contains(u)) {
+      throw new IllegalArgumentException(this + " is already followed by " + u);
+    }
     this.followers.add(u);
   }
 
@@ -52,17 +58,22 @@ public class User {
   }
 
   public int numEdgesAway(User u) throws IllegalArgumentException {
+    return numEdgesAwayHelp(u, 0, new ArrayList<User>());
+  }
+
+  private int numEdgesAwayHelp(User u, int acc, List<User> seen) {
+    //if (seen.contains(u))
     if (this.equals(u)) { //override equals and hashcode
-      //acc
+      return acc;
     }
     else if (this.isFollowedBy(u) || this.isFollowing(u)) {
-
+      return acc + 1;
     }
     else {
-
+      seen.addAll(this.getFollowing());
+      seen.addAll(this.getFollowers());
+      return numEdgesAwayHelp(u, acc + 1, seen);
     }
-
-    return -1;
   }
 
   @Override
