@@ -25,7 +25,8 @@ public class Main {
 
     long startTime = System.nanoTime();
 
-    System.setProperty("webdriver.chrome.driver", "/Users/saif/Downloads/chromedriver");
+    System.setProperty("webdriver.chrome.driver", "\\Users\\Sajjad\\Downloads\\chromedriver_win32\\chromedriver.exe");
+    //"/Users/saif/Downloads/chromedriver"
 
     //test in private session
     ChromeOptions options = new ChromeOptions();
@@ -101,7 +102,31 @@ System.out.println(me.getFollowing().size());*/
 
     driver.quit();
 
+
+    List<User> allNodes = new ArrayList<>();
+    for (User u : me.getFollowers()) {
+      allNodes.add(u);
+    }
+    for (User u : me.getFollowing()) {
+      if (!me.getFollowers().contains(u)) {
+        allNodes.add(u);
+      }
+    }
+    System.out.println(nodesToCSV(allNodes));
+
     System.out.printf("\nRun time: %.3f sec", (System.nanoTime() - startTime) / Math.pow(10, 9));
+  }
+
+  public static String nodesToCSV(List<User> nodes) {
+    StringBuilder csvOutput = new StringBuilder();
+
+    csvOutput.append("name,username,numFollowers,numFollowing");
+    for (User u : nodes) {
+      csvOutput.append(u.getName() + "," + u.getUsername() + ","
+              + u.getFollowers().size() + "," + u.getFollowing().size());
+    }
+
+    return csvOutput.toString();
   }
 
   /**
@@ -115,7 +140,8 @@ System.out.println(me.getFollowing().size());*/
     private static void scrapeOtherFollowLists(WebDriver driver, User me, int elementNum,
                                                int numFollow) throws InterruptedException {
       for (int i = 1, k = 3; i <= numFollow; i++) {
-        //System.out.println(driver.findElement(By.xpath("/html/body/div["+ k + "]/div/div[2]/div/div[2]/ul/div/li[" + i + "]/div/div[2]/span/button")).getText());
+        //System.out.println(driver.findElement(By.xpath("/html/body/div["+ k + "]/div/div[2]/div/div[2]/ul/div/li["
+        // + i + "]/div/div[2]/span/button")).getText());
         pause(1);
 
         if (driver.findElement(By.xpath("/html/body/div[" + k + "]/div/div[2]/div/div[2]/ul/div/li["
@@ -221,20 +247,6 @@ System.out.println(numFollowing);*/
     TimeUnit.MILLISECONDS.sleep((int) sec * 1000);
   }
 
-  public static void mousePos() throws InterruptedException {
-    for (int i = 0; i < 99; i++) {
-      int mouseY = MouseInfo.getPointerInfo().getLocation().y;
-      int mouseX = MouseInfo.getPointerInfo().getLocation().x;
-      System.out.println(mouseX + ", " + mouseY);
-      pause(1);
-    }
-    System.out.println();
-  }
-
-  public static void hoverClick(WebDriver driver, WebElement element) {
-    Actions action = new Actions(driver);
-    action.moveToElement(element).click(element).build().perform();
-  }
 }
 
 /**

@@ -41,12 +41,20 @@ public class User {
     this.followers.add(u);
   }
 
+  public String getName() {
+    return this.name;
+  }
+
+  public String getUsername() {
+    return this.username;
+  }
+
   public List<User> getFollowers() {
-    return followers;
+    return this.followers;
   }
 
   public List<User> getFollowing() {
-    return following;
+    return this.following;
   }
 
   public boolean isFollowedBy(User u) {
@@ -57,6 +65,7 @@ public class User {
     return this.following.contains(u);
   }
 
+  //FIX LATER THIS WILL PROB NOT WORK
   public int numEdgesAway(User u) throws IllegalArgumentException {
     return numEdgesAwayHelp(u, 0, new ArrayList<User>());
   }
@@ -80,6 +89,7 @@ public class User {
   public String toString() {
     return "( " + this.username + " : " + this.name + " )";
   }
+
 }
 
 /*
