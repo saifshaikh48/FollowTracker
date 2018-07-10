@@ -17,38 +17,39 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
-public class Main {
+public class ScrapeRunner {
   //private static User me;
 
   public static void main(String[] args) throws InterruptedException {
-    User me = new PersonZero(args[0] + args[1], args[2], args[3]);
+    try {
+      User me = new PersonZero(args[0] + " " + args[1], args[2], args[3]);
 
-    long startTime = System.nanoTime();
+      long startTime = System.nanoTime();
 
-    System.setProperty("webdriver.chrome.driver", "\\Users\\Sajjad\\Downloads\\chromedriver_win32\\chromedriver.exe");
-    //"/Users/saif/Downloads/chromedriver"
+      System.setProperty("webdriver.chrome.driver", "\\Users\\Sajjad\\Downloads\\chromedriver_win32\\chromedriver.exe");
+      //"/Users/saif/Downloads/chromedriver"
 
-    //test in private session
-    ChromeOptions options = new ChromeOptions();
-    options.addArguments("incognito");
-    DesiredCapabilities.chrome().setCapability(ChromeOptions.CAPABILITY, options);
+      //test in private session
+      ChromeOptions options = new ChromeOptions();
+      options.addArguments("incognito");
+      DesiredCapabilities.chrome().setCapability(ChromeOptions.CAPABILITY, options);
 
-    WebDriver driver = new ChromeDriver();
+      WebDriver driver = new ChromeDriver();
 
-    Actions actions = new Actions(driver);
+      Actions actions = new Actions(driver);
 
-    //driver.manage().window().maximize();
-    driver.get("https://www.instagram.com");
+      //driver.manage().window().maximize();
+      driver.get("https://www.instagram.com");
 
-    pause(2);
+      pause(2);
 
-    driver.findElement(By.xpath("//*[@id=\"react-root\"]/section/main/article" +
-            "/div[2]/div[2]/p/a")).click();
-    pause(1);
+      driver.findElement(By.xpath("//*[@id=\"react-root\"]/section/main/article" +
+              "/div[2]/div[2]/p/a")).click();
+      pause(1);
 
-    ArrayList<WebElement> fields = (ArrayList<WebElement>) driver.findElements(By.tagName("input"));
-    fields.get(0).sendKeys(args[2]);
-    fields.get(1).sendKeys(args[3]);
+      ArrayList<WebElement> fields = (ArrayList<WebElement>) driver.findElements(By.tagName("input"));
+      fields.get(0).sendKeys(args[2]);
+      fields.get(1).sendKeys(args[3]);
 
     /*for(WebElement el: fields) {
       System.out.print(el.getAttribute("id") + " " + el.getTagName() + " " + el.getText()
@@ -56,78 +57,108 @@ public class Main {
               + el.getLocation() + " " + el.isDisplayed() + " " + el.isEnabled() + "\n");
     }*/
 
-    driver.findElement(By.tagName("button")).click();
+      driver.findElement(By.tagName("button")).click();
 
-    pause(2);
+      pause(2);
 
-    driver.findElement(By.linkText("Profile")).click();
+      driver.findElement(By.linkText("Profile")).click();
 
-    pause(2);
+      pause(2);
 
 //--------------------------------------------------------------------------------------------------
-    //TO DO: avoid adding same person as two separate users in followers/following lists
-    List<WebElement> myFollowLinks = driver.findElements(By.partialLinkText("follow"));
+      //TO DO: avoid adding same person as two separate users in followers/following lists
+      List<WebElement> myFollowLinks = driver.findElements(By.partialLinkText("follow"));
 
-    int myNumFollowers = Integer.parseInt(myFollowLinks.get(0).getText().substring(0,
-            myFollowLinks.get(0).getText().indexOf(" ")).replaceAll(",", ""));
+      int myNumFollowers = Integer.parseInt(myFollowLinks.get(0).getText().substring(0,
+              myFollowLinks.get(0).getText().indexOf(" ")).replaceAll(",", ""));
 
-    int myNumFollowing = Integer.parseInt(myFollowLinks.get(1).getText().substring(0,
-            myFollowLinks.get(1).getText().indexOf(" ")).replaceAll(",", ""));
+      int myNumFollowing = Integer.parseInt(myFollowLinks.get(1).getText().substring(0,
+              myFollowLinks.get(1).getText().indexOf(" ")).replaceAll(",", ""));
 /*System.out.println(myNumFollowers);
 System.out.println(myNumFollowing);*/
-myNumFollowers = 14;
-myNumFollowing = 3;
+      myNumFollowers = 20;
+      myNumFollowing = 20;
 
-    pause(1);
+      pause(1);
 
-    scrapeFollowList(driver, me, 2, myNumFollowers);
+      scrapeFollowList(driver, me, 2, myNumFollowers);
 /*System.out.println(me.getFollowers());
 System.out.println(me.getFollowers().size());*/
 
-    pause(1);
+      pause(1);
 
-    scrapeOtherFollowLists(driver, me, 2, myNumFollowers);
+      scrapeOtherFollowLists(driver, me, 2, myNumFollowers);
 
-    driver.navigate().back();
+      driver.navigate().back();
 
-    scrapeFollowList(driver, me, 3, myNumFollowing);
+      scrapeFollowList(driver, me, 3, myNumFollowing);
 /*System.out.println(me.getFollowing());
 System.out.println(me.getFollowing().size());*/
 
-    pause(1);
+      pause(1);
 
-    scrapeOtherFollowLists(driver, me, 2, myNumFollowing);
+      scrapeOtherFollowLists(driver, me, 2, myNumFollowing);
 
-    driver.navigate().back();
+      driver.navigate().back();
 
-    driver.quit();
+      driver.quit();
 
 
-    List<User> allNodes = new ArrayList<>();
-    for (User u : me.getFollowers()) {
-      allNodes.add(u);
-    }
-    for (User u : me.getFollowing()) {
-      if (!me.getFollowers().contains(u)) {
+      List<User> allNodes = new ArrayList<>();
+      for (User u : me.getFollowers()) {
         allNodes.add(u);
       }
-    }
-    System.out.println(nodesToCSV(allNodes));
+      for (User u : me.getFollowing()) {
+        //if (!me.getFollowers().contains(u)) {
+        allNodes.add(u);
+        //}
+      }
+      System.out.println(nodesToCSV(allNodes));
 
-    System.out.printf("\nRun time: %.3f sec", (System.nanoTime() - startTime) / Math.pow(10, 9));
+      System.out.println("\n-----------------------------------------------------------------------------------------\n");
+
+      StringBuilder csvEdges = new StringBuilder();
+      csvEdges.append("from;to\n");
+      for (User u : me.getFollowing()) {
+        csvEdges.append(me.getUsername() + ";" + u.getUsername() + "\n");
+        for (User u2 : u.getFollowing()) {
+          csvEdges.append(u.getUsername() + ";" + u2.getUsername() + "\n");
+        }
+        for (User u2 : u.getFollowers()) {
+          csvEdges.append(u2.getUsername() + ";" + u.getUsername() + "\n");
+        }
+      }
+      for (User u : me.getFollowers()) {
+        csvEdges.append(u.getUsername() + ";" + me.getUsername() + "\n");
+        for (User u2 : u.getFollowing()) {
+          csvEdges.append(u.getUsername() + ";" + u2.getUsername() + "\n");
+        }
+        for (User u2 : u.getFollowers()) {
+          csvEdges.append(u2.getUsername() + ";" + u.getUsername() + "\n");
+        }
+      }
+      System.out.println(csvEdges);
+
+      System.out.printf("\nRun time: %.3f sec", (System.nanoTime() - startTime) / Math.pow(10, 9));
+    }
+    catch (Exception e) {
+      System.out.println();
+    }
   }
 
   public static String nodesToCSV(List<User> nodes) {
     StringBuilder csvOutput = new StringBuilder();
 
-    csvOutput.append("name,username,numFollowers,numFollowing");
+    csvOutput.append("name,username,numFollowers,numFollowing\n");
     for (User u : nodes) {
       csvOutput.append(u.getName() + "," + u.getUsername() + ","
-              + u.getFollowers().size() + "," + u.getFollowing().size());
+              + u.getFollowers().size() + "," + u.getFollowing().size() + "\n");
     }
+
 
     return csvOutput.toString();
   }
+
 
   /**
    * Gets follower/followee lists for my followers/followees.
@@ -161,8 +192,8 @@ System.out.println(me.getFollowing().size());*/
                   followLinks.get(1).getText().indexOf(" ")).replaceAll(",", ""));
 /*System.out.println(numFollowers);
 System.out.println(numFollowing);*/
-          numFollowers = 2;
-          numFollowing = 6;
+          numFollowers = 20;
+          numFollowing = 20;
 
           pause(1);
 
@@ -228,11 +259,13 @@ System.out.println(numFollowing);*/
       catch (NoSuchElementException e) {
         i--;
 
-        JavascriptExecutor jse = (JavascriptExecutor)driver;
-        jse.executeScript("y = document.body.getElementsByClassName(\"j6cq2\");" +
+        ((JavascriptExecutor)driver).executeScript("y = document.body.getElementsByClassName(\"j6cq2\");" +
                 "var x = y[0];x.scrollTo(0,x.scrollHeight);");
       }
-
+      catch (IndexOutOfBoundsException e) {
+        i--;
+        pause(.25);
+      }
       pause(.25);
     }
     //System.out.println("ers: " + u.getFollowers() + "\n  |  ing :" + u.getFollowing());
